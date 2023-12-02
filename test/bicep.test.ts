@@ -1,6 +1,7 @@
 import { MessageConnection } from "vscode-jsonrpc";
-import { compileRequestType, openConnection, validateRequestType } from "../src/utils/bicep";
+import { compileRequestType, openConnection, validateRequestType, installBicepCli } from "../src";
 import path from "path";
+import os from 'os';
 
 const bicepPath = process.env['BICEP_CLI_PATH'];
 if (!bicepPath) {
@@ -12,6 +13,12 @@ beforeAll(async () => (connection = await openConnection(bicepPath)));
 afterAll(() => connection.dispose());
 
 describe("bicep jsonrpc", () => {
+  it('can install bicep', async () => {
+    const basePath = os.tmpdir();
+    const cliPath = await installBicepCli(basePath);
+    expect(cliPath).toBe(`${basePath}/bicep`);
+  }, 60000);
+
   it("should build a bicep file", async () => {
     const result = await compile(
       connection,
