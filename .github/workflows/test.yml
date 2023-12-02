@@ -19,6 +19,8 @@ jobs:
 
     - name: Install Bicep Nightly
       run: bash <(curl -Ls https://aka.ms/bicep/nightly-cli.sh)
+      env:
+        GH_TOKEN: ${{ github.token }}
 
     - name: Run tests
       run: npm test
