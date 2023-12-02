@@ -1,1 +1,1 @@
-export { install } from './utils/bicep';
+export * from './utils/bicep';

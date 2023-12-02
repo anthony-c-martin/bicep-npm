@@ -17,5 +17,10 @@ jobs:
     - name: npm ci
       run: npm ci
 
+    - name: Install Bicep Nightly
+      run: bash <(curl -Ls https://aka.ms/bicep/nightly-cli.sh)
+
     - name: Run tests
       run: npm test
+      env:
+        BICEP_CLI_PATH: /home/runner/.azure/bin/bicep
