@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 import path from "path";
 import os from "os";
-import { spawn, ChildProcess } from "child_process";
+import { spawn, spawnSync, ChildProcess } from "child_process";
 import { randomBytes } from "crypto";
 import { createServer } from "net";
 import {
@@ -26,6 +26,27 @@ export const validateRequestType = new RequestType<
   ValidateResponse,
   never
 >("bicep/validate");
+
+function tryGetVersionNumberError(bicepPath: string) {
+  const result = spawnSync(bicepPath, ["--version"], { encoding: "utf-8" });
+  if (result.status !== 0) {
+    return `Failed to obtain valid Bicep version from '${bicepPath} --version'`;
+  }
+
+  const versionMatch = result.stdout.match(/Bicep CLI version ([^ ]+) /);
+  if (!versionMatch) {
+    return `Failed to obtain valid Bicep version from '${bicepPath} --version'`;
+  }
+
+  const minimumVersion = '0.23.1';
+  const actualVersion = versionMatch[1];
+  const compareResult = actualVersion.localeCompare(minimumVersion, undefined, { numeric: true, sensitivity: 'base' });
+  if (compareResult <= 0) {
+    return `A minimum Bicep version of ${minimumVersion} is required. Detected version ${actualVersion} from '${bicepPath} --version'`;
+  }
+  
+  return;
+}
 
 function generateRandomPipeName(): string {
   const randomSuffix = randomBytes(21).toString("hex");
@@ -58,14 +79,21 @@ function connectClientPipe(pipeName: string, process: ChildProcess): Promise<[Me
   });
 }
 
-export async function openConnection(bicepCli: string) {
+export async function openConnection(bicepPath: string) {
   const pipePath = generateRandomPipeName();
 
-  const process = spawn(bicepCli, ["jsonrpc", "--pipe", pipePath]);
+  const process = spawn(bicepPath, ["jsonrpc", "--pipe", pipePath]);
   let stderr = '';
   process.stderr.on("data", (x) => stderr += x.toString());
   const processExitedEarly = new Promise<void>((_, reject) => 
-    process.on("exit", () => reject(`Failed to invoke '${bicepCli} jsonrpc'. Error: ${stderr}`)));
+    process.on("exit", () => {
+      const error = tryGetVersionNumberError(bicepPath);
+      if (error) {
+        reject(error);
+      } else {
+        reject(`Failed to invoke '${bicepPath} jsonrpc'. Error: ${stderr}`);
+      }
+    }));
 
   const transportConnected = connectClientPipe(pipePath, process);
 
