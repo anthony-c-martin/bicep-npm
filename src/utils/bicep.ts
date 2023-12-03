@@ -1,84 +1,37 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-import path from "path";
 import os from "os";
-import { spawn } from "child_process";
-import { randomBytes } from "crypto";
 import {
-  RequestType,
-  createMessageConnection,
-  createClientPipeTransport,
+  MessageConnection,
 } from "vscode-jsonrpc/node";
+import { installBicepCliWithArch } from "./install";
+import { CompileRequest, CompileResponse, ValidateRequest, ValidateResponse } from "./types";
+import { compileRequestType, openConnection, validateRequestType } from "./jsonrpc";
 
-interface CompileRequest {
-  path: string;
-}
+export class Bicep {
+  private constructor(private connection: MessageConnection) {}
 
-interface CompileResponse {
-  success: boolean;
-  diagnostics: CompileResponseDiagnostic[];
-  contents?: string;
-}
-
-interface CompileResponseDiagnostic {
-  line: number;
-  char: number;
-  level: string;
-  code: string;
-  message: string;
-}
-
-export const compileRequestType = new RequestType<
-  CompileRequest,
-  CompileResponse,
-  never
->("bicep/compile");
-
-interface ValidateRequest {
-  subscriptionId: string;
-  resourceGroup: string;
-  path: string;
-}
-
-interface ValidateResponse {
-  error?: ValidateResponseError;
-}
-
-interface ValidateResponseError {
-  code: string;
-  message: string;
-  target?: string;
-  details?: ValidateResponseError[];
-}
-
-export const validateRequestType = new RequestType<
-  ValidateRequest,
-  ValidateResponse,
-  never
->("bicep/validate");
-
-function generateRandomPipeName(): string {
-  const randomSuffix = randomBytes(21).toString("hex");
-  if (process.platform === "win32") {
-    return `\\\\.\\pipe\\bicep-${randomSuffix}-sock`;
+  static async initialize(bicepPath: string) {
+    const connection = await openConnection(bicepPath);
+    return new Bicep(connection);
   }
 
-  return path.join(os.tmpdir(), `bicep-${randomSuffix}.sock`);
-}
+  static async install(basePath: string, version?: string) {
+    const platform = os.platform();
+    const arch = os.arch();
 
-export async function openConnection(bicepCli: string) {
-  const pipePath = generateRandomPipeName();
-  const transport = await createClientPipeTransport(pipePath, "utf-8");
+    return installBicepCliWithArch(basePath, platform, arch, version);
+  }
 
-  const child = spawn(bicepCli, ["jsonrpc", "--pipe", pipePath]);
-  child.stdout.on("data", (x) => console.log(x.toString()));
-  child.stderr.on("data", (x) => console.error(x.toString()));
+  async compile(request: CompileRequest): Promise<CompileResponse> {
+    return await this.connection.sendRequest(compileRequestType, request);
+  }
 
-  const [reader, writer] = await transport.onConnected();
-  const connection = createMessageConnection(reader, writer, console);
-  process.on("SIGINT", connection.end);
-  process.on("SIGTERM", connection.end);
+  async validate(request: ValidateRequest): Promise<ValidateResponse> {
+    return await this.connection.sendRequest(validateRequestType, request);
+  }
 
-  connection.listen();
-  return connection;
+  dispose() {
+    this.connection.dispose();
+  }
 }

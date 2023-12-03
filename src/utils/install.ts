@@ -1,4 +1,3 @@
-import os from 'os';
 import fs from 'fs/promises';
 import fetch from 'node-fetch';
 
@@ -15,23 +14,18 @@ async function getLatestRelease() {
 function getDownloadUrl(osPlat: string, osArch: string, version: string) {
   const basePath = `${downloadBaseUrl}/${version}`;
 
-  switch (`${osPlat}_${osArch}`) {
+  switch (`${osPlat}_${osArch}`.toLowerCase()) {
     case 'win32_x64': return `${basePath}/bicep-win-x64.exe`;
+    case 'win32_arm64': return `${basePath}/bicep-win-arm64.exe`;
     case 'linux_x64': return `${basePath}/bicep-linux-x64`;
+    case 'linux_arm64': return `${basePath}/bicep-linux-arm64`;
     case 'darwin_x64': return `${basePath}/bicep-osx-x64`;
     case 'darwin_arm64': return `${basePath}/bicep-osx-arm64`;
     default: throw `Bicep CLI is not available for platform ${osPlat} and architecture ${osArch}`;
   }
 }
 
-export async function installBicepCli(basePath: string, version?: string) {
-  const platform = os.platform();
-  const arch = os.arch();
-
-  return installBicepCliWithArch(basePath, platform, arch, version);
-}
-
-async function installBicepCliWithArch(basePath: string, platform: string, arch: string, version?: string) {
+export async function installBicepCliWithArch(basePath: string, platform: string, arch: string, version?: string) {
   if (!version) {
     version = await getLatestRelease();
   }
