@@ -1,0 +1,14 @@
+{
+  "name": "examples",
+  "scripts": {
+    "compile": "ts-node compiling/index.ts"
+  },
+  "author": "Anthony Martin",
+  "license": "MIT",
+  "dependencies": {
+    "bicep-node": "^0.0.4"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1"
+  }
+}
