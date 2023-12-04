@@ -36,3 +36,15 @@ Closing the connection to Bicep CLI after usage.
 ```typescript
 bicep.dispose();
 ```
+
+## Examples
+There are some example usages under [examples](https://github.com/anthony-c-martin/bicep-node/tree/main/examples)
+
+### Compiling
+To run the example in `examples/compiling/index.ts`:
+
+```sh
+cd examples
+npm install
+npm run compile
+```
