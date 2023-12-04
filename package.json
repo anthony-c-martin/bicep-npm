@@ -1,7 +1,7 @@
 {
   "name": "bicep-node",
-  "version": "0.0.3",
-  "description": "Experimental node bindings for Bicep CLI",
+  "version": "0.0.4",
+  "description": "Node wrapper for interacting with the Bicep CLI.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
