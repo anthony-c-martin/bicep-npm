@@ -1,6 +1,6 @@
 {
   "name": "bicep-node",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Experimental node bindings for Bicep CLI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

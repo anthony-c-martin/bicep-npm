@@ -6,13 +6,16 @@ const downloadBaseUrl = 'https://downloads.bicep.azure.com';
 
 async function getLatestRelease() {
   const response = await fetch(latestReleaseUrl);
+  if (!response.ok) {
+    throw `Failed to find latest release of Bicep CLI. Status code: ${response.status}`;
+  }
   const body = await response.json() as { 'tag_name': string };
 
   return body['tag_name'];
 }
 
-function getDownloadUrl(osPlat: string, osArch: string, version: string) {
-  const basePath = `${downloadBaseUrl}/${version}`;
+function getDownloadUrl(osPlat: string, osArch: string, tagName: string) {
+  const basePath = `${downloadBaseUrl}/${tagName}`;
 
   switch (`${osPlat}_${osArch}`.toLowerCase()) {
     case 'win32_x64': return `${basePath}/bicep-win-x64.exe`;
@@ -26,14 +29,15 @@ function getDownloadUrl(osPlat: string, osArch: string, version: string) {
 }
 
 export async function installBicepCliWithArch(basePath: string, platform: string, arch: string, version?: string) {
-  if (!version) {
-    version = await getLatestRelease();
-  }
-
+  const tagName = version ? `v${version}` : await getLatestRelease();
+  
   const targetFile = platform === 'win32' ? 'bicep.exe' : 'bicep';
-  const downloadUrl = getDownloadUrl(platform, arch, version);
+  const downloadUrl = getDownloadUrl(platform, arch, tagName);
 
   const response = await fetch(downloadUrl);
+  if (!response.ok) {
+    throw `Failed to download Bicep CLI. Status code: ${response.status}`;
+  }
   const buffer = await response.arrayBuffer();
 
   const toolPath = `${basePath}/${targetFile}`;
