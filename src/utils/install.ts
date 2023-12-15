@@ -16,7 +16,7 @@ async function getLatestRelease() {
   return body['tag_name'];
 }
 
-function getDownloadUrl(osPlat: string, osArch: string, tagName: string) {
+function getDownloadUrlForTag(osPlat: string, osArch: string, tagName: string) {
   switch (`${osPlat}_${osArch}`.toLowerCase()) {
     case 'win32_x64': return downloadUrl(tagName, 'bicep-win-x64.exe');
     case 'win32_arm64': return downloadUrl(tagName, 'bicep-win-arm64.exe');
@@ -28,11 +28,15 @@ function getDownloadUrl(osPlat: string, osArch: string, tagName: string) {
   }
 }
 
-export async function installBicepCliWithArch(basePath: string, platform: string, arch: string, version?: string) {
+export async function getBicepCliDownloadUrl(platform: string, arch: string, version?: string) {
   const tagName = version ? `v${version}` : await getLatestRelease();
-  
+
+  return getDownloadUrlForTag(platform, arch, tagName);
+}
+
+export async function installBicepCliWithArch(basePath: string, platform: string, arch: string, version?: string) {
   const targetFile = platform === 'win32' ? 'bicep.exe' : 'bicep';
-  const downloadUrl = getDownloadUrl(platform, arch, tagName);
+  const downloadUrl = await getBicepCliDownloadUrl(platform, arch, version);
 
   const response = await fetch(downloadUrl);
   if (!response.ok) {

@@ -6,12 +6,8 @@ import { getUniqueTmpDir } from "./utils";
 
 let bicep: Bicep;
 async function onBeforeAll() {
-  let bicepPath = process.env['BICEP_CLI_PATH'];
-
-  if (!bicepPath) {
-    const basePath = await getUniqueTmpDir('onBeforeAll');
-    bicepPath = await Bicep.install(basePath);
-  }
+  const basePath = await getUniqueTmpDir('default');
+  const bicepPath = await Bicep.install(basePath);
 
   bicep = await Bicep.initialize(bicepPath);
 }
@@ -24,6 +20,12 @@ beforeAll(onBeforeAll, 60000);
 afterAll(onAfterAll);
 
 describe("Bicep class", () => {
+  it('can return the Bicep CLI download URL', async () => {
+    const downloadUrl = await Bicep.getDownloadUrl('0.24.24', 'linux','x64');
+
+    expect(downloadUrl).toBe('https://downloads.bicep.azure.com/v0.24.24/bicep-linux-x64');
+  }, 60000);
+
   it('can install bicep', async () => {
     const basePath = await getUniqueTmpDir('installTest');
     const cliPath = await Bicep.install(basePath);
