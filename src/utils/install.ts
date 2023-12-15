@@ -1,8 +1,10 @@
+import path from 'path';
 import fs from 'fs/promises';
 import fetch from 'node-fetch';
 
-const latestReleaseUrl = 'https://aka.ms/BicepLatestRelease';
 const downloadBaseUrl = 'https://downloads.bicep.azure.com';
+const latestReleaseUrl = `${downloadBaseUrl}/releases/latest`;
+const downloadUrl = (tag: string, artifact: string) => `${downloadBaseUrl}/${tag}/${artifact}`;
 
 async function getLatestRelease() {
   const response = await fetch(latestReleaseUrl);
@@ -15,15 +17,13 @@ async function getLatestRelease() {
 }
 
 function getDownloadUrl(osPlat: string, osArch: string, tagName: string) {
-  const basePath = `${downloadBaseUrl}/${tagName}`;
-
   switch (`${osPlat}_${osArch}`.toLowerCase()) {
-    case 'win32_x64': return `${basePath}/bicep-win-x64.exe`;
-    case 'win32_arm64': return `${basePath}/bicep-win-arm64.exe`;
-    case 'linux_x64': return `${basePath}/bicep-linux-x64`;
-    case 'linux_arm64': return `${basePath}/bicep-linux-arm64`;
-    case 'darwin_x64': return `${basePath}/bicep-osx-x64`;
-    case 'darwin_arm64': return `${basePath}/bicep-osx-arm64`;
+    case 'win32_x64': return downloadUrl(tagName, 'bicep-win-x64.exe');
+    case 'win32_arm64': return downloadUrl(tagName, 'bicep-win-arm64.exe');
+    case 'linux_x64': return downloadUrl(tagName, 'bicep-linux-x64');
+    case 'linux_arm64': return downloadUrl(tagName, 'bicep-linux-arm64');
+    case 'darwin_x64': return downloadUrl(tagName, 'bicep-osx-x64');
+    case 'darwin_arm64': return downloadUrl(tagName, 'bicep-osx-arm64');
     default: throw `Bicep CLI is not available for platform ${osPlat} and architecture ${osArch}`;
   }
 }
@@ -40,7 +40,7 @@ export async function installBicepCliWithArch(basePath: string, platform: string
   }
   const buffer = await response.arrayBuffer();
 
-  const toolPath = `${basePath}/${targetFile}`;
+  const toolPath = path.join(basePath, targetFile);
   await fs.writeFile(toolPath, Buffer.from(buffer));
   await fs.chmod(toolPath, 0o755);
 

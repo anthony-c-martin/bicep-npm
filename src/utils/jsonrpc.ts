@@ -38,10 +38,10 @@ function tryGetVersionNumberError(bicepPath: string) {
     return `Failed to obtain valid Bicep version from '${bicepPath} --version'`;
   }
 
-  const minimumVersion = '0.23.1';
+  const minimumVersion = '0.24.24';
   const actualVersion = versionMatch[1];
   const compareResult = actualVersion.localeCompare(minimumVersion, undefined, { numeric: true, sensitivity: 'base' });
-  if (compareResult <= 0) {
+  if (compareResult < 0) {
     return `A minimum Bicep version of ${minimumVersion} is required. Detected version ${actualVersion} from '${bicepPath} --version'`;
   }
   

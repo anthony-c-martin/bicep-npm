@@ -1,14 +1,15 @@
 import { Bicep } from "../src";
 import path from "path";
-import os from 'os';
+import os from "os";
 import { spawnSync } from 'child_process';
+import { getUniqueTmpDir } from "./utils";
 
 let bicep: Bicep;
 async function onBeforeAll() {
   let bicepPath = process.env['BICEP_CLI_PATH'];
 
   if (!bicepPath) {
-    const basePath = os.tmpdir();
+    const basePath = await getUniqueTmpDir('onBeforeAll');
     bicepPath = await Bicep.install(basePath);
   }
 
@@ -24,9 +25,11 @@ afterAll(onAfterAll);
 
 describe("Bicep class", () => {
   it('can install bicep', async () => {
-    const basePath = os.tmpdir();
+    const basePath = await getUniqueTmpDir('installTest');
     const cliPath = await Bicep.install(basePath);
-    expect(cliPath).toBe(`${basePath}/bicep`);
+
+    const cliName = os.platform() === 'win32' ? 'bicep.exe' : 'bicep';
+    expect(cliPath).toBe(path.join(basePath, cliName));
 
     const result = spawnSync(cliPath,['--version'], { encoding: 'utf-8' });
     expect(result.stdout).toContain('Bicep CLI version');
