@@ -1,5 +1,7 @@
 # bicep-node
-Node wrapper for interacting with the Bicep CLI.
+Node wrapper to expose functionality for programatically interacting with Bicep files.
+
+[![npm version](https://badge.fury.io/js/bicep-node.svg)](https://badge.fury.io/js/bicep-node)
 
 ## Usage
 
