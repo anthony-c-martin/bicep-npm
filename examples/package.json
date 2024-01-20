@@ -1,12 +1,17 @@
 {
   "name": "examples",
   "scripts": {
-    "compile": "ts-node compiling/index.ts"
+    "compile": "ts-node compile/main.ts",
+    "markdown": "ts-node markdown/main.ts",
+    "deploy": "ts-node deploy/main.ts"
   },
   "author": "Anthony Martin",
   "license": "MIT",
   "dependencies": {
-    "bicep-node": "^0.0.4"
+    "@azure/arm-resources": "^5.2.0",
+    "@azure/identity": "^4.0.1",
+    "bicep-node": "file:../dist",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "ts-node": "^10.9.1"

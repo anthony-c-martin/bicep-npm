@@ -5,8 +5,8 @@ import {
   MessageConnection,
 } from "vscode-jsonrpc/node";
 import { getBicepCliDownloadUrl, installBicepCliWithArch } from "./install";
-import { CompileRequest, CompileResponse, ValidateRequest, ValidateResponse } from "./types";
-import { compileRequestType, openConnection, validateRequestType } from "./jsonrpc";
+import { CompileRequest, CompileResponse, GetDeploymentGraphRequest, GetDeploymentGraphResponse, GetFileReferencesRequest, GetFileReferencesResponse, GetMetadataRequest, GetMetadataResponse, VersionRequest, VersionResponse } from "./types";
+import { compileRequestType, getDeploymentGraphRequestType, getFileReferencesRequestType, getMetadataRequestType, hasMinimumVersion, openConnection, versionRequestType } from "./jsonrpc";
 
 /**
  * Helper class to install and interact with the Bicep CLI.
@@ -22,7 +22,20 @@ export class Bicep {
    */
   static async initialize(bicepPath: string) {
     const connection = await openConnection(bicepPath);
-    return new Bicep(connection);
+    const bicep = new Bicep(connection);
+
+    try {
+      const version = await bicep.version();
+      const { success, minimumVersion } = hasMinimumVersion(version);
+      if (!success) {
+        throw new Error(`Bicep CLI version ${version} is not supported. Please install version ${minimumVersion} or later.`);
+      }
+
+      return bicep;
+    } catch (e) {
+      bicep.dispose();
+      throw e;
+    }
   }
 
   /**
@@ -66,6 +79,17 @@ export class Bicep {
   }
 
   /**
+   * Gets the version of the Bicep CLI.
+   *
+   * @returns        The version.
+   */
+  async version(): Promise<string> {
+    const response = await this.connection.sendRequest(versionRequestType, {});
+
+    return response.version;
+  }
+
+  /**
    * Compiles a Bicep file.
    *
    * @param request  The compilation request.
@@ -76,13 +100,33 @@ export class Bicep {
   }
 
   /**
-   * Validates a Bicep file against Azure.
+   * Returns metadata for a Bicep file.
    *
-   * @param request  The validate request.
-   * @returns        The validate response.
+   * @param request  The getMetadata request.
+   * @returns        The getMetadata response.
    */
-  async validate(request: ValidateRequest): Promise<ValidateResponse> {
-    return await this.connection.sendRequest(validateRequestType, request);
+  async getMetadata(request: GetMetadataRequest): Promise<GetMetadataResponse> {
+    return await this.connection.sendRequest(getMetadataRequestType, request);
+  }
+
+  /**
+   * Returns the deployment graph for a Bicep file.
+   *
+   * @param request  The getDeploymentGraph request.
+   * @returns        The getDeploymentGraph response.
+   */
+  async getDeploymentGraph(request: GetDeploymentGraphRequest): Promise<GetDeploymentGraphResponse> {
+    return await this.connection.sendRequest(getDeploymentGraphRequestType, request);
+  }
+
+  /**
+   * Returns file references for a Bicep file.
+   *
+   * @param request  The getFileReferences request.
+   * @returns        The getFileReferences response.
+   */
+  async getFileReferences(request: GetFileReferencesRequest): Promise<GetFileReferencesResponse> {
+    return await this.connection.sendRequest(getFileReferencesRequestType, request);
   }
 
   /**

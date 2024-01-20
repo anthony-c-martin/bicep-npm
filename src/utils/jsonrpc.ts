@@ -13,19 +13,48 @@ import {
   SocketMessageReader,
   SocketMessageWriter,
 } from "vscode-jsonrpc/node";
-import { CompileRequest, CompileResponse, ValidateRequest, ValidateResponse } from "./types";
-  
+import * as types from "./types";
+
+export const versionRequestType = new RequestType<
+  types.VersionRequest,
+  types.VersionResponse,
+  never
+>("bicep/version");
+
 export const compileRequestType = new RequestType<
-  CompileRequest,
-  CompileResponse,
+  types.CompileRequest,
+  types.CompileResponse,
   never
 >("bicep/compile");
 
-export const validateRequestType = new RequestType<
-  ValidateRequest,
-  ValidateResponse,
+export const getMetadataRequestType = new RequestType<
+  types.GetMetadataRequest,
+  types.GetMetadataResponse,
   never
->("bicep/validate");
+>("bicep/getMetadata");
+
+export const getDeploymentGraphRequestType = new RequestType<
+  types.GetDeploymentGraphRequest,
+  types.GetDeploymentGraphResponse,
+  never
+>("bicep/getDeploymentGraph");
+
+export const getFileReferencesRequestType = new RequestType<
+  types.GetFileReferencesRequest,
+  types.GetFileReferencesResponse,
+  never
+>("bicep/getFileReferences");
+
+
+export function hasMinimumVersion(version: string) {
+  const minimumVersion = '0.24.234';
+  const compareResult = version.localeCompare(minimumVersion, undefined, { numeric: true, sensitivity: 'base' });
+
+  return {
+    success: compareResult >= 0,
+    minimumVersion
+  };
+}
 
 function tryGetVersionNumberError(bicepPath: string) {
   const result = spawnSync(bicepPath, ["--version"], { encoding: "utf-8" });
@@ -38,13 +67,12 @@ function tryGetVersionNumberError(bicepPath: string) {
     return `Failed to obtain valid Bicep version from '${bicepPath} --version'`;
   }
 
-  const minimumVersion = '0.24.24';
   const actualVersion = versionMatch[1];
-  const compareResult = actualVersion.localeCompare(minimumVersion, undefined, { numeric: true, sensitivity: 'base' });
-  if (compareResult < 0) {
+  const { success, minimumVersion } = hasMinimumVersion(actualVersion);
+  if (!success) {
     return `A minimum Bicep version of ${minimumVersion} is required. Detected version ${actualVersion} from '${bicepPath} --version'`;
   }
-  
+
   return;
 }
 
@@ -59,23 +87,24 @@ function generateRandomPipeName(): string {
 
 function connectClientPipe(pipeName: string, process: ChildProcess): Promise<[MessageReader, MessageWriter]> {
   return new Promise<[MessageReader, MessageWriter]>((resolve, reject) => {
-    const onProcessExit = () => {
+    const handleConnectionError = () => {
       server.close();
       reject();
     };
 
-		const server = createServer(socket => {
-      process.removeListener('exit', onProcessExit)
-			server.close();
+    const server = createServer(socket => {
+      process.removeListener('exit', handleConnectionError)
+      server.close();
       resolve([
-				new SocketMessageReader(socket, 'utf-8'),
-				new SocketMessageWriter(socket, 'utf-8')
+        new SocketMessageReader(socket, 'utf-8'),
+        new SocketMessageWriter(socket, 'utf-8')
       ]);
-		});
+    });
 
-    process.on('exit', onProcessExit);
-		server.on('error', reject);
-		server.listen(pipeName, () => server.removeListener('error', reject));
+    process.on('exit', handleConnectionError);
+    process.on('error', handleConnectionError);
+    server.on('error', handleConnectionError);
+    server.listen(pipeName, () => server.removeListener('error', handleConnectionError));
   });
 }
 
@@ -85,7 +114,10 @@ export async function openConnection(bicepPath: string) {
   const process = spawn(bicepPath, ["jsonrpc", "--pipe", pipePath]);
   let stderr = '';
   process.stderr.on("data", (x) => stderr += x.toString());
-  const processExitedEarly = new Promise<void>((_, reject) => 
+  const processExitedEarly = new Promise<void>((_, reject) => {
+    process.on("error", (err) => {
+      reject(`Failed to invoke '${bicepPath} jsonrpc'. Error: ${err}`);
+    });
     process.on("exit", () => {
       const error = tryGetVersionNumberError(bicepPath);
       if (error) {
@@ -93,7 +125,8 @@ export async function openConnection(bicepPath: string) {
       } else {
         reject(`Failed to invoke '${bicepPath} jsonrpc'. Error: ${stderr}`);
       }
-    }));
+    });
+  });
 
   const transportConnected = connectClientPipe(pipePath, process);
 

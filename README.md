@@ -40,13 +40,4 @@ bicep.dispose();
 ```
 
 ## Examples
-There are some example usages under [examples](https://github.com/anthony-c-martin/bicep-node/tree/main/examples)
-
-### Compiling
-To run the example in `examples/compiling/index.ts`:
-
-```sh
-cd examples
-npm install
-npm run compile
-```
+See [Examples](https://github.com/anthony-c-martin/bicep-node/tree/main/examples/README.md) for some example usages.
