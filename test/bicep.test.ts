@@ -2,12 +2,16 @@ import { Bicep } from "../src";
 import path from "path";
 import os from "os";
 import { spawnSync } from 'child_process';
-import { getUniqueTmpDir } from "./utils";
+import { formatMarkdown, getUniqueTmpDir, normalizeNewlines } from "./utils";
+import { readFile } from 'fs/promises';
 
 let bicep: Bicep;
 async function onBeforeAll() {
-  const basePath = await getUniqueTmpDir('default');
-  const bicepPath = await Bicep.install(basePath);
+  let bicepPath = process.env.BICEP_BINARY_PATH;
+  if (!bicepPath) {
+    const basePath = await getUniqueTmpDir('default');
+    bicepPath = await Bicep.install(basePath);
+  }
 
   bicep = await Bicep.initialize(bicepPath);
 }
@@ -38,6 +42,12 @@ describe("Bicep class", () => {
     expect(result.status).toBe(0);
   }, 60000);
 
+  it("should return the bicep version", async () => {
+    const version = await bicep.version();
+
+    expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
   it("should build a bicep file", async () => {
     const result = await bicep.compile({
       path: path.join(__dirname, "samples/good.bicep"),
@@ -58,4 +68,73 @@ describe("Bicep class", () => {
     expect(error.code).toBe('BCP007')
     expect(error.message).toBe('This declaration type is not recognized. Specify a metadata, parameter, variable, resource, or output declaration.');
   });
+
+  it("should get metadata for a bicep file", async () => {
+    const result = await bicep.getMetadata({
+      path: path.join(__dirname, "samples/good.bicep"),
+    });
+
+    expect(result.parameters[0].description).toBe('Specifies the location of AKS cluster.');
+    expect(result.outputs[0].description).toBe('The virtual network resource id.');
+    expect(result.metadata[0].name).toBe('description');
+    expect(result.metadata[0].value).toBe('Test template');
+  });
+
+  it("should get the deployment graph for a bicep file", async () => {
+    const result = await bicep.getDeploymentGraph({
+      path: path.join(__dirname, "samples/good.bicep"),
+    });
+
+    expect(result.nodes.map(x => x.name)).toEqual([
+      'aksSubnet',
+      'bastionSubnet',
+      'bastionSubnetNsg',
+      'virtualNetwork',
+      'vmSubnet',
+      'vmSubnetNsg',
+    ]);
+    expect(result.edges).toEqual([
+      { source: 'aksSubnet', target: 'virtualNetwork' },
+      { source: 'bastionSubnet', target: 'virtualNetwork' },
+      { source: 'virtualNetwork', target: 'bastionSubnetNsg' },
+      { source: 'virtualNetwork', target: 'vmSubnetNsg' },
+      { source: 'vmSubnet', target: 'virtualNetwork'}
+    ]);
+  });
+
+  it("can be used to construct documentation", async () => {
+    const filePath = path.join(__dirname, "samples/good.bicep");
+    const fileName = path.basename(filePath);
+    const metadata = await bicep.getMetadata({ path: filePath });
+    const graph = await bicep.getDeploymentGraph({ path: filePath });
+
+    const generatedMarkdown = formatMarkdown(metadata, graph, fileName);
+
+    const mdFilePath = path.join(__dirname, "samples/good.md");
+    const actualMarkdown = await readFile(mdFilePath, 'utf-8');
+
+    expect(normalizeNewlines(generatedMarkdown)).toEqual(normalizeNewlines(actualMarkdown));
+  });
+
+  it("should return file references for a bicep file", async () => {
+    const bicepPath = path.join(__dirname, "samples/good.bicep");
+    const result = await bicep.getFileReferences({
+      path: bicepPath,
+    });
+
+    expect(result.filePaths).toEqual([
+      path.join(bicepPath, '../bicepconfig.json'),
+      bicepPath,
+    ]);
+  });
+
+  it("should throw for an invalid bicep exe path", async () => {
+    try {
+      await Bicep.initialize('asdasdfasdfsdff');
+      expect(false).toBeTruthy();
+    } catch (e) {
+      expect(e).toMatch(/^Failed to invoke /);
+    }
+  });
 });
+

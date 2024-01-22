@@ -7,6 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  USE_NIGHTLY: true
+
 jobs:
   test:
     name: Test
@@ -30,5 +33,24 @@ jobs:
     - name: npm ci
       run: npm ci
 
-    - name: Run tests
+    - name: Run tests (Release)
+      if: env.USE_NIGHTLY != 'true'
       run: npm test
+
+    - name: Install Bicep (Nightly)
+      if: env.USE_NIGHTLY == 'true' && runner.os == 'Windows'
+      run: iex "& { $(irm https://aka.ms/bicep/nightly-cli.ps1) } -BinaryPath ${{ runner.temp }}"
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Install Bicep (Nightly)
+      if: env.USE_NIGHTLY == 'true' && runner.os != 'Windows'
+      run: bash <(curl -Ls https://aka.ms/bicep/nightly-cli.sh) --binary-path ${{ runner.temp }}
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Run tests (Nightly)
+      if: env.USE_NIGHTLY == 'true'
+      run: npm test
+      env:
+        BICEP_BINARY_PATH: ${{ runner.temp }}/bicep
