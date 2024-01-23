@@ -46,6 +46,19 @@ export interface CompileResponse {
   contents?: string;
 }
 
+export interface CompileParamsRequest {
+  path: string;
+  parameterOverrides: Record<string, any>;
+}
+
+export interface CompileParamsResponse {
+  success: boolean;
+  diagnostics: CompileResponseDiagnostic[];
+  parameters?: string;
+  template?: string;
+  templateSpecId?: string;
+}
+
 export interface CompileResponseDiagnostic {
   range: Range;
   level: 'Info' | 'Warning' | 'Error';

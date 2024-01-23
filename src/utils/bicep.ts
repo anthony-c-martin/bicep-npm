@@ -5,8 +5,8 @@ import {
   MessageConnection,
 } from "vscode-jsonrpc/node";
 import { getBicepCliDownloadUrl, installBicepCliWithArch } from "./install";
-import { CompileRequest, CompileResponse, GetDeploymentGraphRequest, GetDeploymentGraphResponse, GetFileReferencesRequest, GetFileReferencesResponse, GetMetadataRequest, GetMetadataResponse, VersionRequest, VersionResponse } from "./types";
-import { compileRequestType, getDeploymentGraphRequestType, getFileReferencesRequestType, getMetadataRequestType, hasMinimumVersion, openConnection, versionRequestType } from "./jsonrpc";
+import { CompileParamsRequest, CompileParamsResponse, CompileRequest, CompileResponse, GetDeploymentGraphRequest, GetDeploymentGraphResponse, GetFileReferencesRequest, GetFileReferencesResponse, GetMetadataRequest, GetMetadataResponse, VersionRequest, VersionResponse } from "./types";
+import { compileParamsRequestType, compileRequestType, getDeploymentGraphRequestType, getFileReferencesRequestType, getMetadataRequestType, hasMinimumVersion, openConnection, versionRequestType } from "./jsonrpc";
 
 /**
  * Helper class to install and interact with the Bicep CLI.
@@ -97,6 +97,16 @@ export class Bicep {
    */
   async compile(request: CompileRequest): Promise<CompileResponse> {
     return await this.connection.sendRequest(compileRequestType, request);
+  }
+
+  /**
+   * Compiles a Bicepparam file.
+   *
+   * @param request  The compilation request.
+   * @returns        The compilation response.
+   */
+  async compileParams(request: CompileParamsRequest): Promise<CompileParamsResponse> {
+    return await this.connection.sendRequest(compileParamsRequestType, request);
   }
 
   /**

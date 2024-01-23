@@ -7,7 +7,7 @@ import { readFile } from 'fs/promises';
 
 let bicep: Bicep;
 async function onBeforeAll() {
-  let bicepPath = process.env.BICEP_BINARY_PATH;
+  let bicepPath = process.env.BICEP_CLI_EXECUTABLE;
   if (!bicepPath) {
     const basePath = await getUniqueTmpDir('default');
     bicepPath = await Bicep.install(basePath);
@@ -55,6 +55,19 @@ describe("Bicep class", () => {
 
     expect(result.success).toBeTruthy();
     expect(result.contents?.length).toBeGreaterThan(0);
+  });
+
+  it("should build a bicepparam file", async () => {
+    const result = await bicep.compileParams({
+      path: path.join(__dirname, "samples/bicepparam/main.bicepparam"),
+      parameterOverrides: {
+        foo: "OVERIDDEN",
+      }
+    });
+
+    expect(result.success).toBeTruthy();
+    expect(result.parameters?.length).toBeGreaterThan(0);
+    expect(JSON.parse(result.parameters!).parameters.foo.value).toBe('OVERIDDEN');
   });
 
   it("should return diagnostics if the bicep file has errors", async () => {
