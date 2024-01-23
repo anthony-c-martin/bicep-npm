@@ -27,6 +27,12 @@ export const compileRequestType = new RequestType<
   never
 >("bicep/compile");
 
+export const compileParamsRequestType = new RequestType<
+  types.CompileParamsRequest,
+  types.CompileParamsResponse,
+  never
+>("bicep/compileParams");
+
 export const getMetadataRequestType = new RequestType<
   types.GetMetadataRequest,
   types.GetMetadataResponse,
@@ -47,7 +53,7 @@ export const getFileReferencesRequestType = new RequestType<
 
 
 export function hasMinimumVersion(version: string) {
-  const minimumVersion = '0.24.234';
+  const minimumVersion = '0.24.238';
   const compareResult = version.localeCompare(minimumVersion, undefined, { numeric: true, sensitivity: 'base' });
 
   return {

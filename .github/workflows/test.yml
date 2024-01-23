@@ -39,13 +39,13 @@ jobs:
 
     - name: Install Bicep (Nightly)
       if: env.USE_NIGHTLY == 'true' && runner.os == 'Windows'
-      run: iex "& { $(irm https://aka.ms/bicep/nightly-cli.ps1) } -BinaryPath ${{ runner.temp }}"
+      run: iex "& { $(irm https://aka.ms/bicep/nightly-cli.ps1) } -BinaryPath ${{ runner.temp }} -RunId 7629688752"
       env:
         GH_TOKEN: ${{ github.token }}
 
     - name: Install Bicep (Nightly)
       if: env.USE_NIGHTLY == 'true' && runner.os != 'Windows'
-      run: bash <(curl -Ls https://aka.ms/bicep/nightly-cli.sh) --binary-path ${{ runner.temp }}
+      run: bash <(curl -Ls https://aka.ms/bicep/nightly-cli.sh) --binary-path ${{ runner.temp }} --run-id 7629688752
       env:
         GH_TOKEN: ${{ github.token }}
 
@@ -53,4 +53,4 @@ jobs:
       if: env.USE_NIGHTLY == 'true'
       run: npm test
       env:
-        BICEP_BINARY_PATH: ${{ runner.temp }}/bicep
+        BICEP_CLI_EXECUTABLE: ${{ runner.temp }}/bicep
