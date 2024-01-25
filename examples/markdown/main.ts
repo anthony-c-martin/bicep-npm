@@ -1,4 +1,4 @@
-import { Bicep, GetDeploymentGraphResponse, GetMetadataResponse, ParamDefinition, Range } from 'bicep-node';
+import { Bicep, GetDeploymentGraphResponse, GetMetadataResponse, SymbolDefinition, Range } from 'bicep-node';
 import os from 'os';
 import path from 'path';
 import yargs from 'yargs';
@@ -89,7 +89,7 @@ ${metadata.outputs.map(x => {
     parametersSection +
     outputsSection;
 
-  function getFormattedRow(param: ParamDefinition) {
+  function getFormattedRow(param: SymbolDefinition) {
     return {
       name: formatCodeLink(param.name, param.range),
       type: param.type ? formatCodeLink(param.type?.name, param.type?.range) : '',

@@ -1,7 +1,7 @@
 import os from 'os';
 import path from 'path';
 import { mkdir } from 'fs/promises';
-import { GetDeploymentGraphResponse, GetMetadataResponse, ParamDefinition, Range } from "../src";
+import { GetDeploymentGraphResponse, GetMetadataResponse, SymbolDefinition, Range } from "../src";
 
 export async function getUniqueTmpDir(name: string) {
   const basePath = path.join(os.tmpdir(), name);
@@ -73,7 +73,7 @@ ${metadata.outputs.map(x => {
     parametersSection +
     outputsSection;
 
-  function getFormattedRow(param: ParamDefinition) {
+  function getFormattedRow(param: SymbolDefinition) {
     return {
       name: formatCodeLink(param.name, param.range),
       type: param.type ? formatCodeLink(param.type?.name, param.type?.range) : '',
