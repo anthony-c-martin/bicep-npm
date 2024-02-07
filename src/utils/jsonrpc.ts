@@ -53,7 +53,7 @@ export const getFileReferencesRequestType = new RequestType<
 
 
 export function hasMinimumVersion(version: string) {
-  const minimumVersion = '0.24.238';
+  const minimumVersion = '0.25.3';
   const compareResult = version.localeCompare(minimumVersion, undefined, { numeric: true, sensitivity: 'base' });
 
   return {

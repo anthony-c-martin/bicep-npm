@@ -20,7 +20,7 @@ const bicepPath = await Bicep.install(parentPath);
 
 Install a particular version of the Bicep CLI.
 ```typescript
-const bicepPath = await Bicep.install(parentPath, '0.24.24');
+const bicepPath = await Bicep.install(parentPath, '0.25.3');
 ```
 
 ### Using the Bicep CLI
